@@ -5,121 +5,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="stylesheet" href="/css/style.css">
-  <title>입력 폼 예제 · MintDesk</title>
+  <title>상담 신청 (입력 폼 UI 예제) · MintDesk</title>
 </head>
 <body>
   <header id="site-header"></header>
-  <main class="container narrow">
+  <main class="container narrow demo-page">
     <div class="page-head">
       <span class="badge">UI 패턴 학습용</span>
-      <h1>입력 폼 예제</h1>
-      <p>좋은 입력 폼이 자주 쓰는 패턴을 모았습니다. 제출하면 <b class="mint">서버가 받은 값</b>이 오른쪽(모바일은 아래)에 나타납니다.</p>
+      <h1>상담 신청서</h1>
+      <p>세그먼트 토글 · 실시간 요금 계산 · 약관 동의 · 계좌 복사 같은 입력 폼 패턴 예제입니다. 로그인·결제 정보는 받지 않아요.</p>
     </div>
 
-    <div class="demo-grid">
-      <form class="card form-section" id="demo-form" novalidate>
-        <h2 class="section-title"><span class="num">예제</span>문의하기</h2>
+    <form id="demo-form" novalidate>
+      <!-- 신청자명 -->
+      <div class="field">
+        <label for="name">신청자명</label>
+        <input class="input" id="name" name="name" maxlength="20" autocomplete="off" placeholder="이름 입력 (입금자명과 동일하게)">
+        <div class="field-foot"><span class="err" data-err="name"></span></div>
+      </div>
 
-        <!-- 1) 실시간 글자 수 + 즉시 검사 -->
-        <div class="field">
-          <label for="name">이름 <span class="req">*</span></label>
-          <input class="input" id="name" name="name" maxlength="20" autocomplete="off" placeholder="홍길동">
-          <div class="field-foot"><span class="err" data-err="name"></span><span class="counter" id="name-count">0 / 20</span></div>
+      <!-- 휴대폰 번호 -->
+      <div class="field">
+        <label for="phone">휴대폰 번호</label>
+        <input class="input" id="phone" name="phone" type="tel" inputmode="numeric" maxlength="13" placeholder="휴대폰 번호 입력 (11자리)">
+        <p class="help-warn">신청자명·연락처가 틀리면 연결 및 비상시 연락이 어려우니 정확히 입력해 주세요.</p>
+        <div class="field-foot"><span class="err" data-err="phone"></span></div>
+      </div>
+
+      <!-- 서비스 선택 (세그먼트 토글) -->
+      <div class="field">
+        <label>서비스 선택</label>
+        <div class="seg" data-name="service">
+          <button type="button" class="seg-btn active" data-value="basic" data-price="900">기본 상담</button>
+          <button type="button" class="seg-btn" data-value="focus" data-price="3000">집중 상담</button>
+          <button type="button" class="seg-btn" data-value="report" data-price="5000">집중+리포트</button>
         </div>
+      </div>
 
-        <!-- 2) 이메일: 형식 통과 시 체크 아이콘 -->
-        <div class="field">
-          <label for="email">이메일 <span class="req">*</span></label>
-          <div class="input-wrap">
-            <input class="input" id="email" name="email" type="email" inputmode="email" autocapitalize="off" placeholder="hong@example.com">
-            <span class="valid-mark" id="email-ok" hidden>✓</span>
+      <!-- 우선 연결 (세그먼트 토글) -->
+      <div class="field">
+        <label>우선 연결</label>
+        <div class="seg" data-name="priority">
+          <button type="button" class="seg-btn" data-value="on">적용</button>
+          <button type="button" class="seg-btn active" data-value="off">미적용</button>
+        </div>
+        <p class="help-warn">급하지 않으면 "미적용"을 선택해 주세요. (적용 시 +1,000원)</p>
+      </div>
+
+      <!-- 쿠폰 사용 여부 (세그먼트 토글) -->
+      <div class="field">
+        <label>할인 쿠폰 사용 여부</label>
+        <div class="seg" data-name="coupon">
+          <button type="button" class="seg-btn" data-value="use">사용</button>
+          <button type="button" class="seg-btn active" data-value="none">사용 안 함</button>
+        </div>
+        <p class="help-warn">쿠폰이 없으면 "사용 안 함"을 선택해 주세요. (사용 시 -500원)</p>
+      </div>
+
+      <!-- 총 요금 요약 -->
+      <div class="field">
+        <label>총 요금 확인</label>
+        <div class="total-summary">
+          <div class="total-row"><span>기본 요금</span><span id="base-fee">900원</span></div>
+          <div class="total-row" id="priority-row" hidden><span>우선 연결</span><span class="plus">+1,000원</span></div>
+          <div class="total-row discount" id="coupon-row" hidden><span>쿠폰 할인</span><span class="minus">-500원</span></div>
+          <div class="total-bar"><span>총 요금</span><span id="total-fee">900원</span></div>
+        </div>
+      </div>
+
+      <!-- 이용 약관 동의 (전체 동의 + 개별 펼치기) -->
+      <div class="field">
+        <label>이용 약관 동의</label>
+        <div class="terms-list">
+          <label class="term-all"><input type="checkbox" id="agree-all"><b>전체 동의</b></label>
+
+          <div class="term">
+            <label class="choice-check"><input type="checkbox" name="agree_terms"><span>상담 신청 이용약관 동의 <em class="req">(필수)</em></span></label>
+            <div class="term-body">본 예제는 UI 연습용입니다. 실제 결제나 계약은 이루어지지 않으며, 입력한 값은 저장되지 않고 화면 확인용으로만 사용됩니다.</div>
           </div>
-          <div class="field-foot"><span class="err" data-err="email"></span></div>
-        </div>
 
-        <!-- 3) 비밀번호 강도 미터 (예시용, 서버로 보내지 않음) -->
-        <div class="field">
-          <label for="password">비밀번호 <span class="muted">(강도 표시 예시)</span></label>
-          <div class="input-wrap">
-            <input class="input" id="password" type="password" autocomplete="new-password" placeholder="영문·숫자·기호 섞어서">
-            <button type="button" class="reveal" id="reveal" aria-label="비밀번호 표시">보기</button>
-          </div>
-          <div class="meter"><div class="meter-bar" id="meter-bar"></div></div>
-          <div class="field-foot"><span class="hint" id="pw-hint">8자 이상을 권장해요</span></div>
-        </div>
-
-        <div class="form-grid">
-          <!-- 4) 드롭다운 -->
-          <div class="field">
-            <label for="topic">문의 유형 <span class="req">*</span></label>
-            <select class="input" id="topic" name="topic">
-              <option value="" disabled selected>선택하세요</option>
-              <option value="product">상품 문의</option>
-              <option value="price">가격 · 견적</option>
-              <option value="support">기술 지원</option>
-              <option value="etc">기타</option>
-            </select>
-            <div class="field-foot"><span class="err" data-err="topic"></span></div>
+          <div class="term">
+            <label class="choice-check"><input type="checkbox" name="agree_privacy"><span>개인정보 수집·이용 동의 <em class="req">(필수)</em></span></label>
+            <div class="term-body">신청자명과 휴대폰 번호는 상담 연결 안내 목적에만 쓰인다는 설정의 예시 문구입니다. 이 예제 페이지는 실제로 정보를 저장하지 않습니다.</div>
           </div>
 
-          <!-- 5) 날짜 -->
-          <div class="field">
-            <label for="visit_date">방문 희망일 <span class="req">*</span></label>
-            <input class="input" id="visit_date" name="visit_date" type="date">
-            <div class="field-foot"><span class="err" data-err="visit_date"></span></div>
+          <div class="term">
+            <label class="choice-check"><input type="checkbox" name="agree_optional"><span>마케팅 정보 수신 동의 <em class="muted">(선택)</em></span></label>
+            <div class="term-body">이벤트·혜택 안내를 받아보는 선택 항목 예시입니다. 동의하지 않아도 신청할 수 있습니다.</div>
           </div>
         </div>
+      </div>
 
-        <!-- 6) 숫자 스테퍼 -->
-        <div class="field">
-          <label>인원 <span class="req">*</span></label>
-          <div class="stepper">
-            <button type="button" data-step="-1" aria-label="인원 감소">−</button>
-            <input class="input" id="headcount" name="headcount" type="number" inputmode="numeric" min="1" max="100" value="1">
-            <button type="button" data-step="1" aria-label="인원 증가">+</button>
-            <span class="muted">명</span>
-          </div>
-          <div class="field-foot"><span class="err" data-err="headcount"></span></div>
+      <!-- 입금 계좌 안내 (복사 버튼) -->
+      <div class="field">
+        <label>입금 계좌 안내</label>
+        <div class="account-box">
+          <span class="acc-text" id="acc-text">OO은행 000-0000-0000-00 MintDesk</span>
+          <button type="button" class="acc-copy" id="acc-copy">복사</button>
         </div>
-
-        <!-- 7) 체크박스 다중 선택 -->
-        <div class="field">
-          <label>연락 받을 방법 <span class="req">*</span> <span class="muted">(복수 선택)</span></label>
-          <div class="yesno yesno-3">
-            <label class="choice"><input type="checkbox" name="channels" value="email"><span>이메일</span></label>
-            <label class="choice"><input type="checkbox" name="channels" value="sms"><span>문자</span></label>
-            <label class="choice"><input type="checkbox" name="channels" value="call"><span>전화</span></label>
-          </div>
-          <div class="field-foot"><span class="err" data-err="channels"></span></div>
+        <div class="deposit-note">
+          <div>입금 금액 <b class="mint" id="deposit-amount">900원</b></div>
+          <div class="muted small-text">총 요금과 다른 금액을 입금하면 확인이 지연될 수 있어요. 입금자명은 신청자명과 같아야 합니다.</div>
         </div>
+      </div>
 
-        <!-- 8) 여러 줄 + 글자 수 제한 -->
-        <div class="field">
-          <label for="message">메시지 <span class="muted">(선택)</span></label>
-          <textarea class="input" id="message" name="message" rows="3" maxlength="300" placeholder="문의 내용을 적어주세요"></textarea>
-          <div class="field-foot"><span class="err" data-err="message"></span><span class="counter" id="message-count">0 / 300</span></div>
-        </div>
+      <p class="form-error" id="form-error"></p>
+      <div class="action-row">
+        <button class="btn btn-mint" id="submit-btn" type="submit">신청하기</button>
+        <button class="btn btn-ghost" type="button" id="history-btn">신청 내역</button>
+      </div>
+    </form>
 
-        <!-- 9) 약관 동의 -->
-        <label class="agree-row">
-          <input type="checkbox" id="agree" name="agree">
-          <span>개인정보 수집 및 이용에 동의합니다. <span class="req">*</span></span>
-        </label>
-        <div class="field-foot"><span class="err" data-err="agree"></span></div>
-
-        <p class="form-error" id="form-error"></p>
-        <button class="btn btn-mint btn-block btn-lg" id="submit-btn">제출하기</button>
-      </form>
-
-      <!-- 서버 응답 패널 -->
-      <aside class="card card-mint result-panel">
-        <h2 class="section-title">서버가 받은 값</h2>
-        <p class="muted small-text">프론트엔드가 <code>fetch()</code>로 보낸 값을 백엔드가 검사한 뒤 돌려준 결과입니다.</p>
-        <pre class="json-view" id="result"><span class="muted">아직 제출하지 않았어요.</span></pre>
-        <div class="result-note" id="result-note"></div>
-      </aside>
-    </div>
+    <!-- 서버 응답 패널 -->
+    <section class="card card-mint result-panel">
+      <h2 class="section-title">서버가 받은 값</h2>
+      <p class="muted small-text">프론트엔드가 <code>fetch()</code>로 보낸 값을 백엔드가 검사하고, <b class="mint">총 요금을 서버에서 다시 계산</b>해 돌려준 결과입니다.</p>
+      <pre class="json-view" id="result"><span class="muted">아직 신청하지 않았어요.</span></pre>
+      <div class="result-note" id="result-note"></div>
+    </section>
   </main>
+
+  <!-- 하단 고정 탭바 -->
+  <nav class="tabbar">
+    <button type="button" data-tab="현황"><span class="t-ic">▦</span>현황</button>
+    <button type="button" data-tab="신청 내역"><span class="t-ic">▤</span>신청 내역</button>
+    <button type="button" data-tab="계좌 복사" id="tab-copy"><span class="t-ic">▢</span>계좌 복사</button>
+    <button type="button" data-tab="문의"><span class="t-ic">◍</span>문의</button>
+  </nav>
+
   <script src="/js/common.js"></script>
   <script src="/js/form-demo.js"></script>
 </body>

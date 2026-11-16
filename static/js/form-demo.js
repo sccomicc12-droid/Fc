@@ -1,68 +1,99 @@
-// 입력 폼 UI 패턴 예제
-// 포인트: 1) 입력하는 즉시 피드백  2) 제출 전 프론트 검사  3) 서버가 다시 검사한 값 표시
+// 상담 신청서 모양의 입력 폼 UI 예제
+// 포인트: 1) 세그먼트 토글 선택  2) 실시간 요금 계산  3) 약관 전체동의  4) 제출 후 서버가 받은 값 표시
 
 renderHeader();
-
 const $ = (id) => document.getElementById(id);
+// won()은 common.js에 이미 정의되어 있어서 여기서 다시 선언하지 않습니다.
 
-// ----- 1) 실시간 글자 수 -----
-function bindCounter(inputId, counterId, max) {
-  const input = $(inputId), counter = $(counterId);
-  const update = () => (counter.textContent = `${input.value.length} / ${max}`);
-  input.addEventListener("input", update);
-  update();
+// 현재 선택 상태 (세그먼트 토글)
+const state = { service: "basic", priority: "off", coupon: "none" };
+const PRICE = { basic: 900, focus: 3000, report: 5000 };
+const PRIORITY_FEE = 1000;
+const COUPON_DISCOUNT = 500;
+
+// ----- 1) 세그먼트 토글: 버튼 하나만 active -----
+document.querySelectorAll(".seg").forEach((seg) => {
+  const name = seg.dataset.name;
+  seg.addEventListener("click", (e) => {
+    const btn = e.target.closest(".seg-btn");
+    if (!btn) return;
+    seg.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    state[name] = btn.dataset.value;
+    recalc();
+  });
+});
+
+// ----- 2) 실시간 총 요금 계산 -----
+function recalc() {
+  const base = PRICE[state.service];
+  let total = base;
+
+  $("base-fee").textContent = won(base);
+
+  const priorityOn = state.priority === "on";
+  $("priority-row").hidden = !priorityOn;
+  if (priorityOn) total += PRIORITY_FEE;
+
+  const couponOn = state.coupon === "use";
+  $("coupon-row").hidden = !couponOn;
+  if (couponOn) total = Math.max(0, total - COUPON_DISCOUNT);
+
+  $("total-fee").textContent = won(total);
+  $("deposit-amount").textContent = won(total);
 }
-bindCounter("name", "name-count", 20);
-bindCounter("message", "message-count", 300);
+recalc();
 
-// ----- 2) 이메일 형식 통과 시 체크 표시 -----
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-$("email").addEventListener("input", (e) => {
-  $("email-ok").hidden = !EMAIL_RE.test(e.target.value.trim());
+// 전화번호 자동 하이픈
+$("phone").addEventListener("input", (e) => {
+  const d = e.target.value.replace(/\D/g, "").slice(0, 11);
+  e.target.value = d.length < 4 ? d : d.length < 8 ? `${d.slice(0, 3)}-${d.slice(3)}`
+    : `${d.slice(0, 3)}-${d.slice(3, d.length - 4)}-${d.slice(-4)}`;
 });
 
-// ----- 3) 비밀번호 강도 미터 (화면 안내용, 서버로 보내지 않음) -----
-$("reveal").addEventListener("click", () => {
-  const pw = $("password");
-  const show = pw.type === "password";
-  pw.type = show ? "text" : "password";
-  $("reveal").textContent = show ? "숨김" : "보기";
-});
-$("password").addEventListener("input", (e) => {
-  const v = e.target.value;
-  // 길이, 영문, 숫자, 기호 중 몇 가지를 만족하는지로 0~4점 계산
-  let score = 0;
-  if (v.length >= 8) score++;
-  if (/[a-zA-Z]/.test(v)) score++;
-  if (/[0-9]/.test(v)) score++;
-  if (/[^a-zA-Z0-9]/.test(v)) score++;
-  const levels = ["", "약함", "보통", "좋음", "아주 좋음"];
-  const colors = ["", "#ff6b81", "#f5c451", "#7dd3c0", "#3ef0c8"];
-  const bar = $("meter-bar");
-  bar.style.width = `${(score / 4) * 100}%`;
-  bar.style.background = colors[score] || "transparent";
-  $("pw-hint").textContent = v ? `강도: ${levels[score]}` : "8자 이상을 권장해요";
-});
-
-// ----- 6) 숫자 스테퍼 (+/- 버튼) -----
-document.querySelectorAll(".stepper button[data-step]").forEach((btn) =>
-  btn.addEventListener("click", () => {
-    const input = $("headcount");
-    const next = (Number(input.value) || 0) + Number(btn.dataset.step);
-    input.value = Math.min(100, Math.max(1, next)); // 1~100 범위로 묶음
+// ----- 3) 약관: 전체 동의 <-> 개별 체크 연동 -----
+const agreeBoxes = [...document.querySelectorAll('.term input[type="checkbox"]')];
+const agreeAll = $("agree-all");
+agreeAll.addEventListener("change", () => agreeBoxes.forEach((c) => (c.checked = agreeAll.checked)));
+agreeBoxes.forEach((c) => c.addEventListener("change", () => {
+  agreeAll.checked = agreeBoxes.every((b) => b.checked);
+}));
+// 약관 제목을 누르면 설명이 접혔다 펴짐
+document.querySelectorAll(".term .choice-check span").forEach((title) =>
+  title.addEventListener("click", (e) => {
+    if (e.target.tagName === "INPUT") return;
+    title.closest(".term").classList.toggle("open");
   }));
 
-// ----- 오류 표시 도우미 -----
+// ----- 4) 계좌 복사 -----
+async function copyAccount() {
+  try {
+    await navigator.clipboard.writeText($("acc-text").textContent.trim());
+    toast("계좌 정보를 복사했어요.");
+  } catch (_) {
+    toast("복사에 실패했어요. 직접 입력해 주세요.", "error");
+  }
+}
+$("acc-copy").addEventListener("click", copyAccount);
+$("tab-copy").addEventListener("click", copyAccount);
+
+// 하단 탭바(예제용): 눌러도 실제 이동은 안 하고 안내만
+document.querySelectorAll(".tabbar button[data-tab]").forEach((b) => {
+  if (b.id === "tab-copy") return;
+  b.addEventListener("click", () => toast(`"${b.dataset.tab}"은(는) 예제라 동작하지 않아요.`));
+});
+$("history-btn").addEventListener("click", () => toast("신청 내역은 예제라 비어 있어요."));
+
+// ----- 오류 표시 -----
 function clearErrors() {
   document.querySelectorAll("[data-err]").forEach((el) => (el.textContent = ""));
-  document.querySelectorAll(".input, select, textarea").forEach((el) => el.classList.remove("invalid"));
+  document.querySelectorAll(".input").forEach((el) => el.classList.remove("invalid"));
   $("form-error").textContent = "";
 }
 function showErrors(fields) {
   Object.entries(fields).forEach(([name, msg]) => {
     const box = document.querySelector(`[data-err="${name}"]`);
     if (box) box.textContent = msg;
-    const input = document.querySelector(`[name="${name}"], #${name}`);
+    const input = document.querySelector(`#${name}`);
     if (input) input.classList.add("invalid");
   });
 }
@@ -72,36 +103,33 @@ $("demo-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   clearErrors();
 
-  // 폼 값을 객체로 모음 (체크박스 channels는 여러 개라 배열로)
-  const form = e.target;
   const data = {
-    name: form.name.value.trim(),
-    email: form.email.value.trim(),
-    topic: form.topic.value,
-    visit_date: form.visit_date.value,
-    headcount: form.headcount.value,
-    channels: [...form.querySelectorAll('input[name="channels"]:checked')].map((c) => c.value),
-    message: form.message.value.trim(),
-    agree: form.agree.checked,
+    name: $("name").value.trim(),
+    phone: $("phone").value.trim(),
+    service: state.service,
+    priority: state.priority,
+    coupon: state.coupon,
+    agree_terms: document.querySelector('[name="agree_terms"]').checked,
+    agree_privacy: document.querySelector('[name="agree_privacy"]').checked,
+    agree_optional: document.querySelector('[name="agree_optional"]').checked,
   };
 
   const btn = $("submit-btn");
   btn.disabled = true;
-  btn.textContent = "전송 중...";
+  btn.textContent = "신청 중...";
   try {
     const res = await api("/api/demo/echo", data);
-    // 서버가 돌려준 '정리된 값'을 보기 좋게 출력
-    $("result").textContent = JSON.stringify(res.received, null, 2);
-    $("result-note").innerHTML = '<span class="ok-note">✓ 서버 검사를 통과했어요</span>';
-    toast("제출 완료! 서버가 받은 값을 확인하세요.");
+    $("result").textContent =
+      JSON.stringify(res.received, null, 2) + `\n\n// 서버가 계산한 총 요금: ${won(res.total)}`;
+    $("result-note").innerHTML = '<span class="ok-note">✓ 신청이 접수되었어요 (예제)</span>';
+    toast("신청 완료! 서버가 받은 값을 확인하세요.");
+    $("result").scrollIntoView({ behavior: "smooth", block: "center" });
   } catch (err) {
-    // api()는 서버가 400을 주면 메시지를 throw. 자세한 필드 오류는 따로 받아서 표시
-    const detail = err.fields;
-    if (detail) showErrors(detail);
+    if (err.fields) showErrors(err.fields);
     $("form-error").textContent = err.message;
-    $("result-note").innerHTML = '<span class="bad-note">✗ 검사에서 막혔어요. 빨간 안내를 확인하세요</span>';
+    $("result-note").innerHTML = '<span class="bad-note">✗ 입력값을 확인해 주세요</span>';
   } finally {
     btn.disabled = false;
-    btn.textContent = "제출하기";
+    btn.textContent = "신청하기";
   }
 });

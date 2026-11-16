@@ -110,61 +110,80 @@ def form_demo_page():
 
 
 # ---------------------------------------------------------------------------
-# 입력 폼 예제 API
+# 입력 폼 예제 API (상담 신청서 모양의 UI 연습용)
 # ---------------------------------------------------------------------------
+# 서비스/옵션별 요금표. 금액 계산은 반드시 서버에서 다시 합니다.
+# (프론트에서 보낸 총액을 그대로 믿으면 사용자가 금액을 조작할 수 있기 때문)
+DEMO_SERVICES = {
+    "basic": {"name": "기본 상담", "price": 900},
+    "focus": {"name": "집중 상담", "price": 3000},
+    "report": {"name": "집중 상담 + 리포트", "price": 5000},
+}
+DEMO_PRIORITY_FEE = 1000   # 우선 연결 추가 요금
+DEMO_COUPON_DISCOUNT = 500  # 쿠폰 사용 시 할인
+
+
+def demo_total(service, priority, coupon):
+    """선택한 옵션으로 총 요금을 계산해서 돌려줍니다."""
+    total = DEMO_SERVICES[service]["price"]
+    if priority == "on":
+        total += DEMO_PRIORITY_FEE
+    if coupon == "use":
+        total = max(0, total - DEMO_COUPON_DISCOUNT)
+    return total
+
+
 @app.post("/api/demo/echo")
 def demo_echo():
-    """폼에서 받은 값을 서버가 검사한 뒤 그대로 돌려줍니다.
-    '프론트에서 보낸 값을 백엔드가 어떻게 받는지' 보여주는 교육용 예제입니다.
-    실제로 저장하지 않으므로 민감한 정보는 넣지 마세요."""
+    """폼에서 받은 값을 서버가 검사하고, 총 요금을 다시 계산해서 돌려줍니다.
+    '프론트에서 보낸 값을 백엔드가 어떻게 받고 검증하는지' 보여주는 교육용 예제입니다.
+    실제로 저장하지 않으며, 로그인·결제 정보 같은 민감한 값은 받지 않습니다."""
     d = request.get_json(silent=True) or {}
 
     name = (d.get("name") or "").strip()
-    email = (d.get("email") or "").strip()
-    topic = d.get("topic")
-    visit_date = (d.get("visit_date") or "").strip()
-    headcount = d.get("headcount")
-    channels = d.get("channels")
-    message = (d.get("message") or "").strip()
-    agree = d.get("agree")
+    phone = re.sub(r"\D", "", d.get("phone") or "")  # 숫자만 남김
+    service = d.get("service")
+    priority = d.get("priority")
+    coupon = d.get("coupon")
+    agree_terms = d.get("agree_terms")
+    agree_privacy = d.get("agree_privacy")
+    agree_optional = bool(d.get("agree_optional"))
 
     # --- 서버 측 검사 (프론트 검사는 우회할 수 있으므로 서버에서 다시 확인) ---
     errors = {}
     if not 2 <= len(name) <= 20:
-        errors["name"] = "이름을 2~20자로 입력해 주세요."
-    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-        errors["email"] = "이메일 형식이 올바르지 않습니다."
-    if topic not in ("product", "price", "support", "etc"):
-        errors["topic"] = "문의 유형을 선택해 주세요."
-    if not re.match(r"^\d{4}-\d{2}-\d{2}$", visit_date or ""):
-        errors["visit_date"] = "날짜를 선택해 주세요."
-    try:
-        headcount = int(headcount)
-        if not 1 <= headcount <= 100:
-            raise ValueError
-    except (TypeError, ValueError):
-        errors["headcount"] = "인원을 1~100명으로 입력해 주세요."
-    if not isinstance(channels, list) or not channels:
-        errors["channels"] = "연락 받을 방법을 하나 이상 선택해 주세요."
-    if len(message) > 300:
-        errors["message"] = "메시지는 300자까지 입력할 수 있습니다."
-    if agree is not True:
-        errors["agree"] = "약관에 동의해야 제출할 수 있습니다."
+        errors["name"] = "신청자명을 2~20자로 입력해 주세요."
+    if not re.fullmatch(r"01[016789]\d{7,8}", phone):
+        errors["phone"] = "휴대폰 번호 11자리를 정확히 입력해 주세요."
+    if service not in DEMO_SERVICES:
+        errors["service"] = "서비스를 선택해 주세요."
+    if priority not in ("on", "off"):
+        errors["priority"] = "우선 연결 여부를 선택해 주세요."
+    if coupon not in ("use", "none"):
+        errors["coupon"] = "쿠폰 사용 여부를 선택해 주세요."
+    if agree_terms is not True:
+        errors["agree_terms"] = "이용약관(필수)에 동의해 주세요."
+    if agree_privacy is not True:
+        errors["agree_privacy"] = "개인정보 수집·이용(필수)에 동의해 주세요."
 
     if errors:
         return jsonify(error="입력값을 확인해 주세요.", fields=errors), 400
 
-    # 검사를 통과한 '정리된 값'을 돌려줍니다.
-    return jsonify(received={
-        "name": name,
-        "email": email,
-        "topic": topic,
-        "visit_date": visit_date,
-        "headcount": headcount,
-        "channels": channels,
-        "message": message,
-        "agree": agree,
-    })
+    total = demo_total(service, priority, coupon)
+    phone = f"{phone[:3]}-{phone[3:-4]}-{phone[-4:]}"
+
+    # 검사를 통과한 '정리된 값'과 서버가 계산한 금액을 돌려줍니다.
+    return jsonify(
+        received={
+            "name": name,
+            "phone": phone,
+            "service": DEMO_SERVICES[service]["name"],
+            "priority": "적용" if priority == "on" else "미적용",
+            "coupon": "사용" if coupon == "use" else "사용 안 함",
+            "agree_optional": agree_optional,
+        },
+        total=total,  # 프론트가 아니라 서버가 계산한 최종 금액
+    )
 
 
 # ---------------------------------------------------------------------------
