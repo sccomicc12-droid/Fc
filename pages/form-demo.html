@@ -32,6 +32,48 @@
         <div class="field-foot"><span class="err" data-err="phone"></span></div>
       </div>
 
+      <!-- 학년 (원본의 '로그인 방식' 자리, 3택) -->
+      <div class="field">
+        <label>학년</label>
+        <div class="yesno yesno-3">
+          <label class="choice"><input type="radio" name="grade" value="1"><span>1학년</span></label>
+          <label class="choice"><input type="radio" name="grade" value="2"><span>2학년</span></label>
+          <label class="choice"><input type="radio" name="grade" value="3"><span>3학년</span></label>
+        </div>
+        <div class="field-foot"><span class="err" data-err="grade"></span></div>
+      </div>
+
+      <!-- 상담 경험 (원본의 'OTP 사용' 자리, 2택) -->
+      <div class="field">
+        <label>상담 경험</label>
+        <div class="yesno">
+          <label class="choice"><input type="radio" name="experience" value="first"><span>처음이에요</span></label>
+          <label class="choice"><input type="radio" name="experience" value="again"><span>받은 적 있어요</span></label>
+        </div>
+        <div class="field-foot"><span class="err" data-err="experience"></span></div>
+      </div>
+
+      <!-- 이메일 (원본의 '아이디' 자리) -->
+      <div class="field">
+        <label for="email">이메일</label>
+        <input class="input" id="email" name="email" type="email" inputmode="email" autocapitalize="off" autocomplete="off" placeholder="example@school.com">
+        <div class="field-foot"><span class="err" data-err="email"></span></div>
+      </div>
+
+      <!-- 보호자 연락처 (원본의 '비밀번호' 자리) -->
+      <div class="field">
+        <label for="guardian">보호자 연락처</label>
+        <input class="input" id="guardian" name="guardian" type="tel" inputmode="numeric" maxlength="13" placeholder="보호자 휴대폰 번호 (11자리)">
+        <div class="field-foot"><span class="err" data-err="guardian"></span></div>
+      </div>
+
+      <!-- 예약 확인 PIN (원본의 '2차 비밀번호' 자리, 4자리) -->
+      <div class="field">
+        <label for="pin">예약 확인 PIN</label>
+        <input class="input" id="pin" name="pin" type="text" inputmode="numeric" maxlength="4" placeholder="예약 조회에 쓸 숫자 4자리">
+        <div class="field-foot"><span class="err" data-err="pin"></span></div>
+      </div>
+
       <!-- 서비스 선택 (세그먼트 토글) -->
       <div class="field">
         <label>서비스 선택</label>

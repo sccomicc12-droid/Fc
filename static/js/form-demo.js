@@ -43,11 +43,20 @@ function recalc() {
 }
 recalc();
 
-// 전화번호 자동 하이픈
-$("phone").addEventListener("input", (e) => {
-  const d = e.target.value.replace(/\D/g, "").slice(0, 11);
-  e.target.value = d.length < 4 ? d : d.length < 8 ? `${d.slice(0, 3)}-${d.slice(3)}`
-    : `${d.slice(0, 3)}-${d.slice(3, d.length - 4)}-${d.slice(-4)}`;
+// 전화번호 자동 하이픈 (휴대폰 번호 + 보호자 연락처)
+function bindPhone(id) {
+  $(id).addEventListener("input", (e) => {
+    const d = e.target.value.replace(/\D/g, "").slice(0, 11);
+    e.target.value = d.length < 4 ? d : d.length < 8 ? `${d.slice(0, 3)}-${d.slice(3)}`
+      : `${d.slice(0, 3)}-${d.slice(3, d.length - 4)}-${d.slice(-4)}`;
+  });
+}
+bindPhone("phone");
+bindPhone("guardian");
+
+// PIN은 숫자만 4자리
+$("pin").addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/\D/g, "").slice(0, 4);
 });
 
 // ----- 3) 약관: 전체 동의 <-> 개별 체크 연동 -----
@@ -103,9 +112,18 @@ $("demo-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   clearErrors();
 
+  const radio = (name) => {
+    const el = document.querySelector(`[name="${name}"]:checked`);
+    return el ? el.value : "";
+  };
   const data = {
     name: $("name").value.trim(),
     phone: $("phone").value.trim(),
+    grade: radio("grade"),
+    experience: radio("experience"),
+    email: $("email").value.trim(),
+    guardian: $("guardian").value.trim(),
+    pin: $("pin").value.trim(),
     service: state.service,
     priority: state.priority,
     coupon: state.coupon,

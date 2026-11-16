@@ -140,14 +140,19 @@ def demo_echo():
     실제로 저장하지 않으며, 로그인·결제 정보 같은 민감한 값은 받지 않습니다."""
     d = request.get_json(silent=True) or {}
 
+    # 원본 예제와 '입력 항목 개수'를 똑같이 맞추되, 민감 정보 대신 상담용 항목으로 구성
     name = (d.get("name") or "").strip()
-    phone = re.sub(r"\D", "", d.get("phone") or "")  # 숫자만 남김
+    phone = re.sub(r"\D", "", d.get("phone") or "")        # 숫자만 남김
+    grade = d.get("grade")                                  # 학년 (로그인 방식 자리)
+    experience = d.get("experience")                        # 상담 경험 (OTP 자리)
+    email = (d.get("email") or "").strip()                  # 이메일 (아이디 자리)
+    guardian = re.sub(r"\D", "", d.get("guardian") or "")   # 보호자 연락처 (비밀번호 자리)
+    pin = re.sub(r"\D", "", d.get("pin") or "")             # 예약 PIN 4자리 (2차 비밀번호 자리)
     service = d.get("service")
     priority = d.get("priority")
     coupon = d.get("coupon")
     agree_terms = d.get("agree_terms")
     agree_privacy = d.get("agree_privacy")
-    agree_optional = bool(d.get("agree_optional"))
 
     # --- 서버 측 검사 (프론트 검사는 우회할 수 있으므로 서버에서 다시 확인) ---
     errors = {}
@@ -155,6 +160,16 @@ def demo_echo():
         errors["name"] = "신청자명을 2~20자로 입력해 주세요."
     if not re.fullmatch(r"01[016789]\d{7,8}", phone):
         errors["phone"] = "휴대폰 번호 11자리를 정확히 입력해 주세요."
+    if grade not in ("1", "2", "3"):
+        errors["grade"] = "학년을 선택해 주세요."
+    if experience not in ("first", "again"):
+        errors["experience"] = "상담 경험을 선택해 주세요."
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        errors["email"] = "이메일 형식이 올바르지 않습니다."
+    if not re.fullmatch(r"01[016789]\d{7,8}", guardian):
+        errors["guardian"] = "보호자 연락처 11자리를 정확히 입력해 주세요."
+    if not re.fullmatch(r"\d{4}", pin):
+        errors["pin"] = "예약 확인 PIN 4자리를 입력해 주세요."
     if service not in DEMO_SERVICES:
         errors["service"] = "서비스를 선택해 주세요."
     if priority not in ("on", "off"):
@@ -170,17 +185,22 @@ def demo_echo():
         return jsonify(error="입력값을 확인해 주세요.", fields=errors), 400
 
     total = demo_total(service, priority, coupon)
-    phone = f"{phone[:3]}-{phone[3:-4]}-{phone[-4:]}"
+    fmt = lambda p: f"{p[:3]}-{p[3:-4]}-{p[-4:]}"
 
     # 검사를 통과한 '정리된 값'과 서버가 계산한 금액을 돌려줍니다.
+    # PIN은 원본과 자릿수를 맞춘 예시일 뿐이며, 마스킹해서 돌려줍니다(실제 저장 안 함).
     return jsonify(
         received={
             "name": name,
-            "phone": phone,
+            "phone": fmt(phone),
+            "grade": f"{grade}학년",
+            "experience": "처음" if experience == "first" else "재상담",
+            "email": email,
+            "guardian": fmt(guardian),
+            "pin": "****",
             "service": DEMO_SERVICES[service]["name"],
             "priority": "적용" if priority == "on" else "미적용",
             "coupon": "사용" if coupon == "use" else "사용 안 함",
-            "agree_optional": agree_optional,
         },
         total=total,  # 프론트가 아니라 서버가 계산한 최종 금액
     )

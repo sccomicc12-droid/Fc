@@ -398,6 +398,9 @@ section { margin-bottom: 48px; }
 .field-foot .err { color: var(--danger); font-size: 13px; }
 .input.invalid { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(255, 107, 129, 0.15); }
 
+/* 학년 등 선택지 묶음 */
+.yesno-3 { grid-template-columns: repeat(3, 1fr); }
+
 /* 세그먼트 토글 (알약형 버튼 묶음) */
 .seg { display: flex; gap: 4px; padding: 5px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); }
 .seg-btn {
