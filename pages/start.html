@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <title>상담 신청 · MintDesk</title>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="container narrow">
+
+    <!-- 진행 단계 표시 -->
+    <ol class="progress" id="progress">
+      <li class="active"><span>1</span>학년 선택</li>
+      <li><span>2</span>신청서 작성</li>
+      <li><span>3</span>신청 완료</li>
+    </ol>
+
+    <!-- 1단계: 학년 선택 -->
+    <section class="step-view" id="step-grade">
+      <div class="page-head center">
+        <span class="badge">교내 학생 전용</span>
+        <h1>학년을 선택하세요</h1>
+        <p>선택한 학년에 맞는 상담 선생님께 연결됩니다.</p>
+      </div>
+      <div class="grade-grid" id="grade-grid"></div>
+    </section>
+
+    <!-- 2단계: 신청서 -->
+    <form class="step-view" id="step-form" hidden novalidate>
+      <div class="page-head">
+        <h1>상담 신청서 <span class="badge" id="grade-badge"></span>
+          <button type="button" class="link-btn" id="change-grade">학년 변경</button></h1>
+        <p>모든 항목을 작성한 뒤 맨 아래 <b class="mint">신청하기</b>를 눌러 주세요.</p>
+      </div>
+
+      <div class="card form-section">
+        <h2 class="section-title"><span class="num">01</span>기본 정보</h2>
+        <div class="form-grid">
+          <div class="field">
+            <label for="real_name">이름</label>
+            <input class="input" id="real_name" name="real_name" maxlength="20" required>
+          </div>
+          <div class="field">
+            <label for="phone">전화번호</label>
+            <input class="input" id="phone" name="phone" type="tel" inputmode="numeric" placeholder="010-1234-5678" maxlength="13" required>
+          </div>
+          <div class="field">
+            <label for="username">아이디</label>
+            <input class="input" id="username" name="username" autocomplete="username" autocapitalize="off" required>
+            <span class="hint">영문, 숫자, _ 사용 4~20자</span>
+          </div>
+          <div class="field">
+            <label for="school_code">학교 지급 코드</label>
+            <input class="input" id="school_code" name="school_code" autocapitalize="characters" placeholder="예: MINT-1001" required>
+            <span class="hint">담임 선생님께 받은 코드를 입력하세요</span>
+          </div>
+          <div class="field">
+            <label for="password">비밀번호</label>
+            <input class="input" id="password" name="password" type="password" autocomplete="new-password" required>
+            <span class="hint">8자 이상</span>
+          </div>
+          <div class="field">
+            <label for="password2">비밀번호 확인</label>
+            <input class="input" id="password2" name="password2" type="password" autocomplete="new-password" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="card form-section">
+        <h2 class="section-title"><span class="num">02</span>상담 유형</h2>
+        <div class="type-grid" id="type-grid"></div>
+      </div>
+
+      <div class="card form-section">
+        <h2 class="section-title"><span class="num">03</span>익명으로 상담할까요?</h2>
+        <p class="muted small">'예'를 선택하면 상담 선생님께 이름 대신 <b>익명</b>으로 표시됩니다.</p>
+        <div class="yesno">
+          <label class="choice"><input type="radio" name="anonymous" value="yes"><span>예, 익명으로 할게요</span></label>
+          <label class="choice"><input type="radio" name="anonymous" value="no"><span>아니요, 이름을 공개할게요</span></label>
+        </div>
+      </div>
+
+      <div class="card form-section">
+        <h2 class="section-title"><span class="num">04</span>개인정보 수집 · 이용 동의</h2>
+        <div class="terms">
+          <p><b>수집 항목</b> 이름, 전화번호, 학년, 아이디</p>
+          <p><b>이용 목적</b> 상담 신청 확인, 상담 진행 및 연락</p>
+          <p><b>보유 기간</b> 졸업 시 또는 탈퇴 요청 시 즉시 파기</p>
+          <p class="muted">동의를 거부할 수 있으나, 거부 시 상담 신청이 불가능합니다.</p>
+        </div>
+        <div class="yesno">
+          <label class="choice"><input type="radio" name="privacy_agree" value="yes"><span>예, 동의합니다</span></label>
+          <label class="choice"><input type="radio" name="privacy_agree" value="no"><span>아니요, 동의하지 않습니다</span></label>
+        </div>
+        <p class="warn" id="privacy-warn" hidden>동의하지 않으면 신청할 수 없어요.</p>
+      </div>
+
+      <div class="card form-section">
+        <h2 class="section-title"><span class="num">05</span>서비스에 만족하셨나요?</h2>
+        <p class="muted small">선택 사항이에요. 더 나은 상담실을 만드는 데 사용됩니다.</p>
+        <div class="rating" id="rating">
+          <label class="choice"><input type="radio" name="satisfaction" value="1"><span><b>1</b>매우 불만족</span></label>
+          <label class="choice"><input type="radio" name="satisfaction" value="2"><span><b>2</b>불만족</span></label>
+          <label class="choice"><input type="radio" name="satisfaction" value="3"><span><b>3</b>보통</span></label>
+          <label class="choice"><input type="radio" name="satisfaction" value="4"><span><b>4</b>만족</span></label>
+          <label class="choice"><input type="radio" name="satisfaction" value="5"><span><b>5</b>매우 만족</span></label>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="card card-mint">
+          <h2 class="section-title">이용 요금</h2>
+          <table class="fee-table" id="fee-table"></table>
+        </div>
+        <div class="card card-mint">
+          <h2 class="section-title">학교 연락처</h2>
+          <dl class="contact" id="contact"></dl>
+        </div>
+      </div>
+
+      <p class="form-error center" id="form-error"></p>
+      <button class="btn btn-mint btn-block btn-lg" id="submit-btn">신청하기</button>
+    </form>
+
+    <!-- 3단계: 완료 -->
+    <section class="step-view" id="step-done" hidden>
+      <div class="card card-mint done-card">
+        <div class="icon-lg done-icon">✓</div>
+        <h1>상담 신청이 완료되었습니다</h1>
+        <p class="muted" id="done-text"></p>
+        <dl class="summary" id="summary"></dl>
+        <div class="hero-actions">
+          <a class="btn btn-mint" href="/customer">1:1 상담 채팅으로 이동</a>
+          <a class="btn btn-ghost" href="/">메인으로</a>
+        </div>
+        <p class="muted small" id="done-contact"></p>
+      </div>
+    </section>
+  </main>
+  <script src="/js/common.js"></script>
+  <script src="/js/start.js"></script>
+</body>
+</html>

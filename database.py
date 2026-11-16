@@ -20,8 +20,8 @@ def get_connection():
 
 
 # 기본 문의 카테고리 (slug, 이름, 설명)
+# (첫 번째 칸은 메인 화면의 "시작하기" 카드가 차지합니다)
 DEFAULT_CATEGORIES = [
-    ("order", "주문 · 배송", "주문 확인, 배송 조회, 배송지 변경"),
     ("payment", "결제 · 환불", "결제 오류, 환불 요청, 영수증 발급"),
     ("account", "회원 · 계정", "로그인 문제, 비밀번호 변경, 회원 탈퇴"),
     ("product", "상품 문의", "재고, 사이즈, 상품 상세 정보"),
@@ -40,6 +40,12 @@ def init_db():
             "INSERT OR IGNORE INTO categories (slug, name, description, sort_order) "
             "VALUES (?, ?, ?, ?)",
             [(s, n, d, i) for i, (s, n, d) in enumerate(DEFAULT_CATEGORIES)],
+        )
+
+        # 테스트용 학교 코드 10개 (MINT-1001 ~ MINT-1010)
+        conn.executemany(
+            "INSERT OR IGNORE INTO school_codes (code) VALUES (?)",
+            [(f"MINT-{n}",) for n in range(1001, 1011)],
         )
 
         exists = conn.execute(

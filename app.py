@@ -20,6 +20,57 @@ PAGES_DIR = BASE_DIR / "pages"
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 
 USERNAME_RULE = re.compile(r"^[a-zA-Z0-9_]{4,20}$")
+PHONE_RULE = re.compile(r"^01[016789]\d{7,8}$")  # 하이픈을 뺀 휴대폰 번호
+
+# ---------------------------------------------------------------------------
+# 학교 설정 (학교에 맞게 이 부분만 바꾸면 됩니다)
+# ---------------------------------------------------------------------------
+GRADES = [1, 2, 3]
+
+CONSULT_TYPES = [
+    {"slug": "career", "name": "진로 · 진학", "desc": "대학 진학, 진로 탐색, 적성 고민"},
+    {"slug": "study", "name": "학업 · 성적", "desc": "공부 방법, 성적 고민, 수행평가"},
+    {"slug": "friends", "name": "교우 관계", "desc": "친구 문제, 학급 생활, 갈등 상담"},
+    {"slug": "mind", "name": "심리 · 정서", "desc": "스트레스, 불안, 우울감 등 마음 건강"},
+    {"slug": "life", "name": "학교생활 · 기타", "desc": "가정, 생활 습관, 그 밖의 모든 고민"},
+]
+
+SCHOOL_INFO = {
+    "name": "OO고등학교 Wee클래스",
+    "fees": [
+        {"item": "기본 상담 (1:1 채팅)", "price": "무료"},
+        {"item": "대면 상담 예약", "price": "무료"},
+        {"item": "심리검사 (외부 기관 연계)", "price": "1회 10,000원"},
+    ],
+    "contact": {
+        "place": "본관 2층 상담실",
+        "phone": "02-000-0000",
+        "email": "counsel@school.example",
+        "hours": "평일 08:30 ~ 17:00",
+    },
+}
+
+
+class ApiError(Exception):
+    """API에서 오류를 돌려줄 때 사용. raise ApiError("메시지", 400)"""
+
+    def __init__(self, message, status=400):
+        super().__init__(message)
+        self.message = message
+        self.status = status
+
+
+@app.errorhandler(ApiError)
+def handle_api_error(err):
+    return jsonify(error=err.message), err.status
+
+
+def validate_account(username, password):
+    """아이디/비밀번호 규칙 검사 (회원가입, 학교 신청에서 같이 사용)"""
+    if not USERNAME_RULE.match(username):
+        raise ApiError("아이디는 영문/숫자/_ 4~20자여야 합니다.")
+    if len(password) < 8:
+        raise ApiError("비밀번호는 8자 이상이어야 합니다.")
 
 
 # ---------------------------------------------------------------------------
@@ -42,6 +93,11 @@ def login_page():
 @app.get("/signup")
 def signup_page():
     return page("signup.html")
+
+
+@app.get("/start")
+def start_page():
+    return page("start.html")
 
 
 @app.get("/customer")
@@ -78,6 +134,105 @@ def categories():
 
 
 # ---------------------------------------------------------------------------
+# 학교 상담 신청 API
+# ---------------------------------------------------------------------------
+@app.get("/api/school/info")
+def school_info():
+    """신청 화면에 필요한 정보 (학년, 상담 유형, 요금, 연락처)"""
+    return jsonify(grades=GRADES, consult_types=CONSULT_TYPES, **SCHOOL_INFO)
+
+
+@app.post("/api/school/apply")
+def school_apply():
+    d = request.get_json(silent=True) or {}
+    grade = d.get("grade")
+    real_name = (d.get("real_name") or "").strip()
+    phone = re.sub(r"\D", "", d.get("phone") or "")  # 숫자만 남김
+    username = (d.get("username") or "").strip()
+    password = d.get("password") or ""
+    code = (d.get("school_code") or "").strip().upper()
+    consult_type = d.get("consult_type")
+    anonymous = d.get("anonymous")
+    privacy = d.get("privacy_agree")
+    satisfaction = d.get("satisfaction")
+
+    # --- 1) 입력값 검사 ---
+    try:
+        grade = int(grade)
+    except (TypeError, ValueError):
+        grade = None
+    if grade not in GRADES:
+        raise ApiError("학년을 선택해 주세요.")
+    if not 2 <= len(real_name) <= 20:
+        raise ApiError("이름을 2~20자로 입력해 주세요.")
+    if not PHONE_RULE.match(phone):
+        raise ApiError("전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)")
+    validate_account(username, password)
+    if not code:
+        raise ApiError("학교에서 받은 코드를 입력해 주세요.")
+    if consult_type not in {t["slug"] for t in CONSULT_TYPES}:
+        raise ApiError("상담 유형을 선택해 주세요.")
+    if anonymous not in ("yes", "no"):
+        raise ApiError("익명 여부를 선택해 주세요.")
+    # 개인정보는 동의 없이 수집할 수 없으므로 '아니요'면 신청 불가
+    if privacy != "yes":
+        raise ApiError("개인정보 수집·이용에 동의해야 신청할 수 있습니다.")
+    if satisfaction not in (None, ""):
+        try:
+            satisfaction = int(satisfaction)
+        except (TypeError, ValueError):
+            satisfaction = 0
+        if not 1 <= satisfaction <= 5:
+            raise ApiError("만족도는 1~5점 중에서 선택해 주세요.")
+    else:
+        satisfaction = None
+    phone = f"{phone[:3]}-{phone[3:-4]}-{phone[-4:]}"
+
+    # --- 2) DB 저장 ---
+    # with 블록 안에서 오류(raise)가 나면 지금까지의 저장이 모두 취소(rollback)됩니다.
+    # 그래서 "회원은 만들어졌는데 코드는 그대로" 같은 어중간한 상태가 생기지 않습니다.
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT used_by FROM school_codes WHERE code = ?", (code,)
+            ).fetchone()
+            if row is None:
+                raise ApiError("유효하지 않은 학교 코드입니다.")
+            if row["used_by"] is not None:
+                raise ApiError("이미 사용된 학교 코드입니다.", 409)
+
+            cur = conn.execute(
+                "INSERT INTO users (username, password_hash, nickname, real_name, phone, grade) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (username, generate_password_hash(password), real_name, real_name, phone, grade),
+            )
+            user_id = cur.lastrowid
+
+            # used_by IS NULL 조건: 두 명이 동시에 같은 코드를 써도 한 명만 성공
+            used = conn.execute(
+                "UPDATE school_codes SET used_by = ?, used_at = datetime('now', 'localtime') "
+                "WHERE code = ? AND used_by IS NULL",
+                (user_id, code),
+            )
+            if used.rowcount != 1:
+                raise ApiError("이미 사용된 학교 코드입니다.", 409)
+
+            conn.execute(
+                "INSERT INTO applications (user_id, grade, consult_type, anonymous, privacy_agree, satisfaction) "
+                "VALUES (?, ?, ?, ?, 1, ?)",
+                (user_id, grade, consult_type, 1 if anonymous == "yes" else 0, satisfaction),
+            )
+            user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    except sqlite3.IntegrityError:
+        raise ApiError("이미 사용 중인 아이디입니다.", 409)
+
+    # 신청과 동시에 로그인 처리
+    session.clear()
+    session["user_id"] = user_id
+    return jsonify(message="상담 신청이 완료되었습니다.", user=public_user(user)), 201
+
+
+# ---------------------------------------------------------------------------
 # 회원 API
 # ---------------------------------------------------------------------------
 @app.post("/api/signup")
@@ -88,10 +243,7 @@ def signup():
     nickname = (data.get("nickname") or "").strip()
 
     # 1) 서버에서도 반드시 입력값을 검사합니다. (프론트 검사는 우회할 수 있기 때문)
-    if not USERNAME_RULE.match(username):
-        return jsonify(error="아이디는 영문/숫자/_ 4~20자여야 합니다."), 400
-    if len(password) < 8:
-        return jsonify(error="비밀번호는 8자 이상이어야 합니다."), 400
+    validate_account(username, password)
     if not 1 <= len(nickname) <= 20:
         return jsonify(error="닉네임은 1~20자여야 합니다."), 400
 
