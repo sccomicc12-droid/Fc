@@ -39,7 +39,7 @@ function showStep(name) {
 
   // 요금표, 연락처
   document.getElementById("fee-table").innerHTML = info.fees.map((f) => `
-    <tr><td>${escapeHtml(f.item)}</td><td class="${f.price === "무료" ? "mint" : ""}">${escapeHtml(f.price)}</td></tr>`).join("");
+    <tr><td>${escapeHtml(f.item)}</td><td class="${f.price === 0 ? "mint" : ""}">${f.price === 0 ? "무료" : `1회 ${won(f.price)}`}</td></tr>`).join("");
   document.getElementById("contact").innerHTML = contactHtml(info);
 })();
 

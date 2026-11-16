@@ -12,38 +12,40 @@
   <main class="container">
     <div class="page-head">
       <h1 id="greeting">1:1 상담</h1>
-      <p>문의 유형을 선택하고 상담을 시작하세요.</p>
+      <p>상담 유형을 선택하고 상담원과 실시간으로 대화하세요.</p>
     </div>
 
     <div class="workspace">
       <aside class="card">
-        <h2 class="section-title">문의 유형</h2>
-        <div class="side-list" id="category-list"></div>
+        <h2 class="section-title">상담 유형</h2>
+        <div class="side-list" id="topic-list"></div>
       </aside>
 
       <section class="card card-mint chat">
         <div class="chat-head">
           <div>
-            <h2 id="chat-title">카테고리를 선택하세요</h2>
+            <h2 id="chat-title">상담 유형을 선택하세요</h2>
             <small class="muted"><span class="status-dot" id="chat-dot"></span><span id="chat-status">대기 전</span></small>
           </div>
-          <button class="btn btn-mint" id="start-btn" disabled>상담 시작</button>
+          <button class="btn btn-mint" id="head-btn" disabled>상담 시작</button>
         </div>
         <div class="chat-body" id="chat-body">
           <div class="empty">
             <div class="icon-lg" id="empty-icon"></div>
             <b>아직 진행 중인 상담이 없어요</b>
-            <p>왼쪽에서 문의 유형을 고른 뒤 상담을 시작하세요.</p>
+            <p>왼쪽에서 상담 유형을 고른 뒤 <b class="mint">상담 시작</b>을 눌러 주세요.</p>
           </div>
         </div>
         <form class="chat-input" id="chat-form">
-          <input class="input" id="chat-text" placeholder="메시지를 입력하세요" disabled>
-          <button class="btn btn-mint" disabled>전송</button>
+          <input class="input" id="chat-text" placeholder="메시지를 입력하세요" maxlength="1000" autocomplete="off" disabled>
+          <button class="btn btn-mint" id="send-btn" disabled>전송</button>
         </form>
       </section>
     </div>
   </main>
+  <script src="/js/vendor/socket.io.min.js"></script>
   <script src="/js/common.js"></script>
+  <script src="/js/chat-ui.js"></script>
   <script src="/js/customer.js"></script>
 </body>
 </html>

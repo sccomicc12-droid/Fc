@@ -39,3 +39,48 @@ CREATE TABLE IF NOT EXISTS applications (
     satisfaction  INTEGER,                   -- 1~5점, 선택 안 하면 NULL
     created_at    TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
+
+-- 1:1 상담방. status: waiting(대기) → active(상담 중) → closed(종료)
+CREATE TABLE IF NOT EXISTS chat_rooms (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL REFERENCES users(id),
+    agent_id    INTEGER REFERENCES users(id),     -- 수락한 상담원 (대기 중이면 NULL)
+    topic       TEXT    NOT NULL,                 -- 상담 주제 이름 (예: 학교 · 심리 · 정서)
+    anonymous   INTEGER NOT NULL DEFAULT 0,       -- 1이면 상담원에게 '익명 학생'으로 표시
+    status      TEXT    NOT NULL DEFAULT 'waiting',
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
+    closed_at   TEXT
+);
+
+-- 채팅 메시지. kind: text(일반) / system(연결됨, 종료됨 같은 안내)
+CREATE TABLE IF NOT EXISTS messages (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    room_id    INTEGER NOT NULL REFERENCES chat_rooms(id),
+    sender_id  INTEGER REFERENCES users(id),      -- 시스템 메시지는 NULL
+    kind       TEXT    NOT NULL DEFAULT 'text',
+    body       TEXT    NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
+);
+CREATE INDEX IF NOT EXISTS idx_messages_room ON messages(room_id, id);
+
+-- 포인트 충전 신청 (무통장입금). status: pending(입금 대기) / approved(적립 완료) / rejected(반려)
+CREATE TABLE IF NOT EXISTS charge_requests (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id      INTEGER NOT NULL REFERENCES users(id),
+    amount       INTEGER NOT NULL CHECK (amount >= 1000),   -- DB에서도 최소 금액을 한 번 더 보장
+    depositor    TEXT    NOT NULL,                          -- 입금자명
+    status       TEXT    NOT NULL DEFAULT 'pending',
+    created_at   TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
+    processed_at TEXT,
+    processed_by INTEGER REFERENCES users(id)
+);
+
+-- 포인트 장부: 적립은 +, 사용은 -. 잔액 = 이 사용자의 amount 합계
+-- (잔액 숫자 하나만 저장하지 않고 모든 내역을 남기는 것이 실제 결제 시스템의 기본 방식)
+CREATE TABLE IF NOT EXISTS point_ledger (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL REFERENCES users(id),
+    amount     INTEGER NOT NULL,
+    reason     TEXT    NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
+);

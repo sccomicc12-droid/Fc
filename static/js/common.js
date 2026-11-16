@@ -12,6 +12,16 @@ async function api(url, body) {
   return data;
 }
 
+// 1000 → "1,000원"
+const won = (n) => `${Number(n).toLocaleString("ko-KR")}원`;
+
+// 실시간 서버(웹소켓) 연결. 끊겨도 자동으로 다시 연결됨
+function connectSocket() {
+  const socket = io();
+  socket.on("connect_error", () => toast("실시간 서버 연결에 실패했어요. 새로고침해 주세요.", "error"));
+  return socket;
+}
+
 // 사용자가 입력한 글자를 HTML로 그대로 넣으면 XSS 공격이 가능하므로 변환
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) =>
@@ -69,6 +79,7 @@ async function renderHeader() {
     nav = `
       <span class="user-chip"><span class="status-dot on"></span>${escapeHtml(user.nickname)}
         <span class="badge ${isAgent ? "" : "badge-gray"}">${isAgent ? "상담원" : "고객"}</span></span>
+      ${isAgent ? "" : '<a class="btn btn-ghost" href="/wallet">포인트</a>'}
       <a class="btn btn-outline" href="${isAgent ? "/agent" : "/customer"}">${isAgent ? "대시보드" : "내 상담"}</a>
       <button class="btn btn-ghost" id="logout-btn">로그아웃</button>`;
   } else {

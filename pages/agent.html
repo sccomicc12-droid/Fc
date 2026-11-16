@@ -12,42 +12,53 @@
   <main class="container">
     <div class="page-head">
       <h1>상담원 대시보드</h1>
-      <p>카테고리별 대기 고객을 확인하고 상담을 진행하세요.</p>
+      <p>대기 중인 학생을 수락해 상담하고, 포인트 입금을 확인하세요.</p>
     </div>
 
-    <div class="stats" id="stats"></div>
+    <div class="stats stats-4">
+      <div class="stat"><div class="label" data-icon="inbox">대기 중</div><div class="num" id="s-waiting">0</div></div>
+      <div class="stat"><div class="label" data-icon="chat">내 상담 중</div><div class="num" id="s-active">0</div></div>
+      <div class="stat"><div class="label" data-icon="start">오늘 종료</div><div class="num" id="s-closed">0</div></div>
+      <div class="stat"><div class="label" data-icon="payment">입금 확인 대기</div><div class="num" id="s-charges">0</div></div>
+    </div>
 
     <div class="workspace">
       <aside class="card">
-        <h2 class="section-title">대기 중인 고객</h2>
-        <div class="side-list" id="waiting-list">
-          <div class="empty"><b>대기 중인 고객이 없어요</b><p>고객이 상담을 요청하면 여기에 나타납니다.</p></div>
-        </div>
+        <h2 class="section-title">상담 목록</h2>
+        <div class="side-list" id="room-list"></div>
       </aside>
 
       <section class="card card-mint chat">
         <div class="chat-head">
           <div>
-            <h2>상담 창</h2>
-            <small class="muted"><span class="status-dot"></span>선택된 고객 없음</small>
+            <h2 id="chat-title">상담 창</h2>
+            <small class="muted"><span class="status-dot" id="chat-dot"></span><span id="chat-status">선택된 상담 없음</span></small>
           </div>
-          <button class="btn btn-ghost" disabled>상담 종료</button>
+          <button class="btn btn-mint" id="head-btn" hidden></button>
         </div>
-        <div class="chat-body">
+        <div class="chat-body" id="chat-body">
           <div class="empty">
             <div class="icon-lg" id="empty-icon"></div>
-            <b>고객을 선택하세요</b>
-            <p>왼쪽 목록에서 고객을 선택하면 대화가 시작됩니다.</p>
+            <b>상담을 선택하세요</b>
+            <p>왼쪽 목록에서 학생을 선택하면 대화 내용이 보입니다.</p>
           </div>
         </div>
-        <form class="chat-input">
-          <input class="input" placeholder="메시지를 입력하세요" disabled>
-          <button class="btn btn-mint" disabled>전송</button>
+        <form class="chat-input" id="chat-form">
+          <input class="input" id="chat-text" placeholder="메시지를 입력하세요" maxlength="1000" autocomplete="off" disabled>
+          <button class="btn btn-mint" id="send-btn" disabled>전송</button>
         </form>
       </section>
     </div>
+
+    <section class="card" id="charges">
+      <h2 class="section-title">포인트 충전 신청 (입금 확인)</h2>
+      <p class="muted small">학교 통장에 입금자명과 금액이 맞게 들어왔는지 확인한 뒤 <b class="mint">입금 확인</b>을 누르면 포인트가 적립됩니다.</p>
+      <div class="table-wrap"><table class="table" id="charge-table"></table></div>
+    </section>
   </main>
+  <script src="/js/vendor/socket.io.min.js"></script>
   <script src="/js/common.js"></script>
+  <script src="/js/chat-ui.js"></script>
   <script src="/js/agent.js"></script>
 </body>
 </html>

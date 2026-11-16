@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <title>포인트 · MintDesk</title>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="container narrow">
+    <div class="page-head">
+      <h1>포인트</h1>
+      <p>계좌이체로 포인트를 충전하고, 유료 서비스를 포인트로 결제하세요.</p>
+    </div>
+
+    <div class="card card-mint balance-card">
+      <div>
+        <div class="muted">보유 포인트</div>
+        <div class="balance-num"><span id="balance">0</span><span class="unit">P</span></div>
+        <div class="muted small-text">1P = 1원 · 입금 확인 후 적립됩니다</div>
+      </div>
+      <a class="btn btn-outline" href="#charge-form">충전하기</a>
+    </div>
+
+    <div class="wallet-grid">
+      <form class="card form-section" id="charge-form">
+        <h2 class="section-title"><span class="num">01</span>포인트 충전 (계좌이체)</h2>
+        <div class="amount-grid" id="amount-grid">
+          <label class="choice"><input type="radio" name="preset" value="1000"><span>1,000원</span></label>
+          <label class="choice"><input type="radio" name="preset" value="5000"><span>5,000원</span></label>
+          <label class="choice"><input type="radio" name="preset" value="10000"><span>10,000원</span></label>
+          <label class="choice"><input type="radio" name="preset" value="30000"><span>30,000원</span></label>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="amount">충전 금액</label>
+            <input class="input" id="amount" name="amount" type="number" inputmode="numeric" min="1000" step="100" placeholder="직접 입력" required>
+            <span class="hint" id="amount-hint">최소 1,000원부터 충전할 수 있어요</span>
+          </div>
+          <div class="field">
+            <label for="depositor">입금자명</label>
+            <input class="input" id="depositor" name="depositor" maxlength="20" required>
+            <span class="hint">통장에 찍히는 이름과 같아야 해요</span>
+          </div>
+        </div>
+        <p class="form-error" id="form-error"></p>
+        <button class="btn btn-mint btn-block">충전 신청</button>
+
+        <div class="bank-box" id="bank-box" hidden>
+          <div class="bank-title">아래 계좌로 입금해 주세요</div>
+          <dl class="contact">
+            <dt>은행</dt><dd id="bank-name"></dd>
+            <dt>계좌번호</dt><dd><span id="bank-account"></span> <button type="button" class="link-btn" id="copy-btn">복사</button></dd>
+            <dt>예금주</dt><dd id="bank-holder"></dd>
+            <dt>입금 금액</dt><dd class="mint" id="bank-amount"></dd>
+            <dt>입금자명</dt><dd id="bank-depositor"></dd>
+          </dl>
+          <p class="muted small-text">상담실에서 입금을 확인하면 포인트가 자동으로 적립되고 이 화면에 바로 반영됩니다.</p>
+        </div>
+      </form>
+
+      <div class="card form-section">
+        <h2 class="section-title"><span class="num">02</span>포인트로 결제</h2>
+        <div id="products"></div>
+      </div>
+    </div>
+
+    <div class="wallet-grid">
+      <div class="card">
+        <h2 class="section-title">충전 신청 내역</h2>
+        <div class="table-wrap"><table class="table" id="charge-table"></table></div>
+      </div>
+      <div class="card">
+        <h2 class="section-title">포인트 사용 내역</h2>
+        <ul class="ledger" id="ledger"></ul>
+      </div>
+    </div>
+  </main>
+  <script src="/js/vendor/socket.io.min.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/wallet.js"></script>
+</body>
+</html>

@@ -55,6 +55,6 @@ def init_db():
             conn.execute(
                 "INSERT INTO users (username, password_hash, nickname, role) "
                 "VALUES (?, ?, ?, 'agent')",
-                ("agent", generate_password_hash("agent1234"), "상담원"),
+                ("agent", generate_password_hash("agent1234"), "박선생"),
             )
             print("[DB] 테스트 상담원 계정 생성: agent / agent1234")

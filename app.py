@@ -10,7 +10,11 @@ import sqlite3
 from flask import Flask, jsonify, redirect, request, send_from_directory, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
+import chat
+import points
+from config import CONSULT_TYPES, GRADES, SCHOOL_INFO
 from database import BASE_DIR, get_connection, init_db
+from helpers import ApiError, current_user, login_required, public_user, socketio
 
 # static/ : CSS, JS 같은 누구나 받아도 되는 파일
 # pages/  : HTML 페이지. 서버가 로그인 여부를 확인한 뒤에만 보내줍니다.
@@ -19,45 +23,13 @@ PAGES_DIR = BASE_DIR / "pages"
 # 세션(로그인 상태)을 암호화하는 비밀 키. 실제 서비스에서는 환경변수로 관리해야 합니다.
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 
+# 기능별로 나눈 API 묶음(Blueprint)을 등록
+app.register_blueprint(chat.bp)     # /api/chat/...   1:1 상담
+app.register_blueprint(points.bp)   # /api/points...  포인트 충전/결제
+socketio.init_app(app)              # 실시간 통신(웹소켓) 연결
+
 USERNAME_RULE = re.compile(r"^[a-zA-Z0-9_]{4,20}$")
 PHONE_RULE = re.compile(r"^01[016789]\d{7,8}$")  # 하이픈을 뺀 휴대폰 번호
-
-# ---------------------------------------------------------------------------
-# 학교 설정 (학교에 맞게 이 부분만 바꾸면 됩니다)
-# ---------------------------------------------------------------------------
-GRADES = [1, 2, 3]
-
-CONSULT_TYPES = [
-    {"slug": "career", "name": "진로 · 진학", "desc": "대학 진학, 진로 탐색, 적성 고민"},
-    {"slug": "study", "name": "학업 · 성적", "desc": "공부 방법, 성적 고민, 수행평가"},
-    {"slug": "friends", "name": "교우 관계", "desc": "친구 문제, 학급 생활, 갈등 상담"},
-    {"slug": "mind", "name": "심리 · 정서", "desc": "스트레스, 불안, 우울감 등 마음 건강"},
-    {"slug": "life", "name": "학교생활 · 기타", "desc": "가정, 생활 습관, 그 밖의 모든 고민"},
-]
-
-SCHOOL_INFO = {
-    "name": "OO고등학교 Wee클래스",
-    "fees": [
-        {"item": "기본 상담 (1:1 채팅)", "price": "무료"},
-        {"item": "대면 상담 예약", "price": "무료"},
-        {"item": "심리검사 (외부 기관 연계)", "price": "1회 10,000원"},
-    ],
-    "contact": {
-        "place": "본관 2층 상담실",
-        "phone": "02-000-0000",
-        "email": "counsel@school.example",
-        "hours": "평일 08:30 ~ 17:00",
-    },
-}
-
-
-class ApiError(Exception):
-    """API에서 오류를 돌려줄 때 사용. raise ApiError("메시지", 400)"""
-
-    def __init__(self, message, status=400):
-        super().__init__(message)
-        self.message = message
-        self.status = status
 
 
 @app.errorhandler(ApiError)
@@ -111,6 +83,16 @@ def customer_page():
     return page("customer.html")
 
 
+@app.get("/wallet")
+def wallet_page():
+    user = current_user()
+    if user is None:
+        return redirect("/login?next=/wallet")
+    if user["role"] == "agent":
+        return redirect("/agent")
+    return page("wallet.html")
+
+
 @app.get("/agent")
 def agent_page():
     user = current_user()
@@ -140,6 +122,22 @@ def categories():
 def school_info():
     """신청 화면에 필요한 정보 (학년, 상담 유형, 요금, 연락처)"""
     return jsonify(grades=GRADES, consult_types=CONSULT_TYPES, **SCHOOL_INFO)
+
+
+@app.get("/api/school/my")
+@login_required()
+def my_application(user):
+    """내 가장 최근 학교 상담 신청서 (없으면 null)"""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT grade, consult_type, anonymous, created_at FROM applications "
+            "WHERE user_id = ? ORDER BY id DESC LIMIT 1",
+            (user["id"],),
+        ).fetchone()
+    if row is None:
+        return jsonify(application=None)
+    names = {t["slug"]: t["name"] for t in CONSULT_TYPES}
+    return jsonify(application={**dict(row), "consult_name": names.get(row["consult_type"], "")})
 
 
 @app.post("/api/school/apply")
@@ -293,28 +291,9 @@ def me():
     return jsonify(user=public_user(user) if user else None)
 
 
-# ---------------------------------------------------------------------------
-# 도우미 함수
-# ---------------------------------------------------------------------------
-def current_user():
-    user_id = session.get("user_id")
-    if user_id is None:
-        return None
-    with get_connection() as conn:
-        return conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-
-
-def public_user(user):
-    """비밀번호 해시 같은 민감 정보는 빼고 프론트에 보낼 정보만 고릅니다."""
-    return {
-        "id": user["id"],
-        "username": user["username"],
-        "nickname": user["nickname"],
-        "role": user["role"],
-    }
-
-
 if __name__ == "__main__":
     init_db()
     # HOST=0.0.0.0 으로 실행하면 같은 와이파이의 다른 기기(아이패드 등)에서도 접속 가능
-    app.run(debug=True, host=os.environ.get("HOST", "127.0.0.1"), port=5000)
+    # 웹소켓을 쓰기 때문에 app.run 대신 socketio.run 으로 실행합니다.
+    socketio.run(app, debug=True, host=os.environ.get("HOST", "127.0.0.1"), port=5000,
+                 allow_unsafe_werkzeug=True)
