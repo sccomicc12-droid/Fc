@@ -386,3 +386,54 @@ section { margin-bottom: 48px; }
 .ledger .minus { color: var(--danger); font-weight: 800; }
 .btn { white-space: nowrap; }
 .amount-grid .choice > span { padding: 12px 4px; font-size: 15px; white-space: nowrap; }
+
+/* =========================================================================
+   입력 폼 예제 (/form-demo)
+   ========================================================================= */
+.demo-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; }
+.demo-grid .form-section { margin-bottom: 0; }
+@media (max-width: 820px) { .demo-grid { grid-template-columns: 1fr; } }
+
+.req { color: var(--mint); }
+.field-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 18px; margin-top: 5px; }
+.field-foot .err { color: var(--danger); font-size: 13px; }
+.field-foot .counter { margin-left: auto; color: var(--muted); font-size: 12px; }
+.field-foot .hint { margin: 0; }
+.input.invalid, select.invalid, textarea.invalid { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(255, 107, 129, 0.15); }
+
+/* 입력칸 안에 아이콘/버튼을 겹쳐 넣기 */
+.input-wrap { position: relative; }
+.input-wrap .input { width: 100%; padding-right: 54px; }
+.valid-mark { position: absolute; top: 50%; right: 14px; transform: translateY(-50%); color: var(--mint); font-weight: 800; }
+.reveal { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: var(--surface); border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.reveal:hover { color: var(--text); }
+
+textarea.input { padding: 12px 14px; resize: vertical; min-height: 84px; line-height: 1.5; }
+select.input { appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%238b98a5' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M5 8l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; }
+
+/* 비밀번호 강도 미터 */
+.meter { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 8px; }
+.meter-bar { height: 100%; width: 0; border-radius: 999px; transition: width 0.2s ease, background 0.2s ease; }
+
+/* 숫자 스테퍼 */
+.stepper { display: flex; align-items: center; gap: 8px; }
+.stepper button { width: 44px; height: 44px; flex: none; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font-size: 22px; line-height: 1; cursor: pointer; }
+.stepper button:hover { border-color: var(--mint); color: var(--mint); }
+.stepper .input { width: 90px; text-align: center; }
+.stepper input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.yesno-3 { grid-template-columns: repeat(3, 1fr); }
+
+.agree-row { display: flex; align-items: center; gap: 10px; padding: 14px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); cursor: pointer; font-size: 15px; }
+.agree-row input { width: 20px; height: 20px; accent-color: var(--mint); flex: none; }
+
+/* 서버 응답 패널 */
+.result-panel { position: sticky; top: 84px; }
+.json-view { margin: 12px 0 0; padding: 16px; border-radius: 12px; background: #060b10; border: 1px solid var(--line);
+  color: var(--mint); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow: auto; }
+code { background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: 13px; color: var(--mint); }
+.result-note { margin-top: 12px; min-height: 20px; font-weight: 600; font-size: 14px; }
+.ok-note { color: var(--mint); }
+.bad-note { color: var(--danger); }

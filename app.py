@@ -103,6 +103,70 @@ def agent_page():
     return page("agent.html")
 
 
+@app.get("/form-demo")
+def form_demo_page():
+    # 누구나 볼 수 있는 입력 폼 UI 패턴 예제 (로그인 불필요)
+    return page("form-demo.html")
+
+
+# ---------------------------------------------------------------------------
+# 입력 폼 예제 API
+# ---------------------------------------------------------------------------
+@app.post("/api/demo/echo")
+def demo_echo():
+    """폼에서 받은 값을 서버가 검사한 뒤 그대로 돌려줍니다.
+    '프론트에서 보낸 값을 백엔드가 어떻게 받는지' 보여주는 교육용 예제입니다.
+    실제로 저장하지 않으므로 민감한 정보는 넣지 마세요."""
+    d = request.get_json(silent=True) or {}
+
+    name = (d.get("name") or "").strip()
+    email = (d.get("email") or "").strip()
+    topic = d.get("topic")
+    visit_date = (d.get("visit_date") or "").strip()
+    headcount = d.get("headcount")
+    channels = d.get("channels")
+    message = (d.get("message") or "").strip()
+    agree = d.get("agree")
+
+    # --- 서버 측 검사 (프론트 검사는 우회할 수 있으므로 서버에서 다시 확인) ---
+    errors = {}
+    if not 2 <= len(name) <= 20:
+        errors["name"] = "이름을 2~20자로 입력해 주세요."
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        errors["email"] = "이메일 형식이 올바르지 않습니다."
+    if topic not in ("product", "price", "support", "etc"):
+        errors["topic"] = "문의 유형을 선택해 주세요."
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", visit_date or ""):
+        errors["visit_date"] = "날짜를 선택해 주세요."
+    try:
+        headcount = int(headcount)
+        if not 1 <= headcount <= 100:
+            raise ValueError
+    except (TypeError, ValueError):
+        errors["headcount"] = "인원을 1~100명으로 입력해 주세요."
+    if not isinstance(channels, list) or not channels:
+        errors["channels"] = "연락 받을 방법을 하나 이상 선택해 주세요."
+    if len(message) > 300:
+        errors["message"] = "메시지는 300자까지 입력할 수 있습니다."
+    if agree is not True:
+        errors["agree"] = "약관에 동의해야 제출할 수 있습니다."
+
+    if errors:
+        return jsonify(error="입력값을 확인해 주세요.", fields=errors), 400
+
+    # 검사를 통과한 '정리된 값'을 돌려줍니다.
+    return jsonify(received={
+        "name": name,
+        "email": email,
+        "topic": topic,
+        "visit_date": visit_date,
+        "headcount": headcount,
+        "channels": channels,
+        "message": message,
+        "agree": agree,
+    })
+
+
 # ---------------------------------------------------------------------------
 # 카테고리 API
 # ---------------------------------------------------------------------------

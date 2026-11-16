@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <title>입력 폼 예제 · MintDesk</title>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="container narrow">
+    <div class="page-head">
+      <span class="badge">UI 패턴 학습용</span>
+      <h1>입력 폼 예제</h1>
+      <p>좋은 입력 폼이 자주 쓰는 패턴을 모았습니다. 제출하면 <b class="mint">서버가 받은 값</b>이 오른쪽(모바일은 아래)에 나타납니다.</p>
+    </div>
+
+    <div class="demo-grid">
+      <form class="card form-section" id="demo-form" novalidate>
+        <h2 class="section-title"><span class="num">예제</span>문의하기</h2>
+
+        <!-- 1) 실시간 글자 수 + 즉시 검사 -->
+        <div class="field">
+          <label for="name">이름 <span class="req">*</span></label>
+          <input class="input" id="name" name="name" maxlength="20" autocomplete="off" placeholder="홍길동">
+          <div class="field-foot"><span class="err" data-err="name"></span><span class="counter" id="name-count">0 / 20</span></div>
+        </div>
+
+        <!-- 2) 이메일: 형식 통과 시 체크 아이콘 -->
+        <div class="field">
+          <label for="email">이메일 <span class="req">*</span></label>
+          <div class="input-wrap">
+            <input class="input" id="email" name="email" type="email" inputmode="email" autocapitalize="off" placeholder="hong@example.com">
+            <span class="valid-mark" id="email-ok" hidden>✓</span>
+          </div>
+          <div class="field-foot"><span class="err" data-err="email"></span></div>
+        </div>
+
+        <!-- 3) 비밀번호 강도 미터 (예시용, 서버로 보내지 않음) -->
+        <div class="field">
+          <label for="password">비밀번호 <span class="muted">(강도 표시 예시)</span></label>
+          <div class="input-wrap">
+            <input class="input" id="password" type="password" autocomplete="new-password" placeholder="영문·숫자·기호 섞어서">
+            <button type="button" class="reveal" id="reveal" aria-label="비밀번호 표시">보기</button>
+          </div>
+          <div class="meter"><div class="meter-bar" id="meter-bar"></div></div>
+          <div class="field-foot"><span class="hint" id="pw-hint">8자 이상을 권장해요</span></div>
+        </div>
+
+        <div class="form-grid">
+          <!-- 4) 드롭다운 -->
+          <div class="field">
+            <label for="topic">문의 유형 <span class="req">*</span></label>
+            <select class="input" id="topic" name="topic">
+              <option value="" disabled selected>선택하세요</option>
+              <option value="product">상품 문의</option>
+              <option value="price">가격 · 견적</option>
+              <option value="support">기술 지원</option>
+              <option value="etc">기타</option>
+            </select>
+            <div class="field-foot"><span class="err" data-err="topic"></span></div>
+          </div>
+
+          <!-- 5) 날짜 -->
+          <div class="field">
+            <label for="visit_date">방문 희망일 <span class="req">*</span></label>
+            <input class="input" id="visit_date" name="visit_date" type="date">
+            <div class="field-foot"><span class="err" data-err="visit_date"></span></div>
+          </div>
+        </div>
+
+        <!-- 6) 숫자 스테퍼 -->
+        <div class="field">
+          <label>인원 <span class="req">*</span></label>
+          <div class="stepper">
+            <button type="button" data-step="-1" aria-label="인원 감소">−</button>
+            <input class="input" id="headcount" name="headcount" type="number" inputmode="numeric" min="1" max="100" value="1">
+            <button type="button" data-step="1" aria-label="인원 증가">+</button>
+            <span class="muted">명</span>
+          </div>
+          <div class="field-foot"><span class="err" data-err="headcount"></span></div>
+        </div>
+
+        <!-- 7) 체크박스 다중 선택 -->
+        <div class="field">
+          <label>연락 받을 방법 <span class="req">*</span> <span class="muted">(복수 선택)</span></label>
+          <div class="yesno yesno-3">
+            <label class="choice"><input type="checkbox" name="channels" value="email"><span>이메일</span></label>
+            <label class="choice"><input type="checkbox" name="channels" value="sms"><span>문자</span></label>
+            <label class="choice"><input type="checkbox" name="channels" value="call"><span>전화</span></label>
+          </div>
+          <div class="field-foot"><span class="err" data-err="channels"></span></div>
+        </div>
+
+        <!-- 8) 여러 줄 + 글자 수 제한 -->
+        <div class="field">
+          <label for="message">메시지 <span class="muted">(선택)</span></label>
+          <textarea class="input" id="message" name="message" rows="3" maxlength="300" placeholder="문의 내용을 적어주세요"></textarea>
+          <div class="field-foot"><span class="err" data-err="message"></span><span class="counter" id="message-count">0 / 300</span></div>
+        </div>
+
+        <!-- 9) 약관 동의 -->
+        <label class="agree-row">
+          <input type="checkbox" id="agree" name="agree">
+          <span>개인정보 수집 및 이용에 동의합니다. <span class="req">*</span></span>
+        </label>
+        <div class="field-foot"><span class="err" data-err="agree"></span></div>
+
+        <p class="form-error" id="form-error"></p>
+        <button class="btn btn-mint btn-block btn-lg" id="submit-btn">제출하기</button>
+      </form>
+
+      <!-- 서버 응답 패널 -->
+      <aside class="card card-mint result-panel">
+        <h2 class="section-title">서버가 받은 값</h2>
+        <p class="muted small-text">프론트엔드가 <code>fetch()</code>로 보낸 값을 백엔드가 검사한 뒤 돌려준 결과입니다.</p>
+        <pre class="json-view" id="result"><span class="muted">아직 제출하지 않았어요.</span></pre>
+        <div class="result-note" id="result-note"></div>
+      </aside>
+    </div>
+  </main>
+  <script src="/js/common.js"></script>
+  <script src="/js/form-demo.js"></script>
+</body>
+</html>

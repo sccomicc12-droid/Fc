@@ -8,7 +8,11 @@ async function api(url, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "요청에 실패했습니다.");
+  if (!res.ok) {
+    const err = new Error(data.error || "요청에 실패했습니다.");
+    err.fields = data.fields; // 서버가 준 항목별 오류(있으면)를 함께 전달
+    throw err;
+  }
   return data;
 }
 
