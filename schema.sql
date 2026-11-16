@@ -8,3 +8,12 @@ CREATE TABLE IF NOT EXISTS users (
     role          TEXT    NOT NULL DEFAULT 'customer',
     created_at    TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
 );
+
+-- 문의 카테고리 테이블 (주문·배송, 결제·환불 ...)
+CREATE TABLE IF NOT EXISTS categories (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug        TEXT    NOT NULL UNIQUE,   -- 주소에 쓰는 영문 이름 (예: order)
+    name        TEXT    NOT NULL,          -- 화면에 보이는 이름
+    description TEXT    NOT NULL,
+    sort_order  INTEGER NOT NULL DEFAULT 0
+);

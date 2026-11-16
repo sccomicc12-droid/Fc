@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <title>상담원 대시보드 · MintDesk</title>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="container">
+    <div class="page-head">
+      <h1>상담원 대시보드</h1>
+      <p>카테고리별 대기 고객을 확인하고 상담을 진행하세요.</p>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="workspace">
+      <aside class="card">
+        <h2 class="section-title">대기 중인 고객</h2>
+        <div class="side-list" id="waiting-list">
+          <div class="empty"><b>대기 중인 고객이 없어요</b><p>고객이 상담을 요청하면 여기에 나타납니다.</p></div>
+        </div>
+      </aside>
+
+      <section class="card card-mint chat">
+        <div class="chat-head">
+          <div>
+            <h2>상담 창</h2>
+            <small class="muted"><span class="status-dot"></span>선택된 고객 없음</small>
+          </div>
+          <button class="btn btn-ghost" disabled>상담 종료</button>
+        </div>
+        <div class="chat-body">
+          <div class="empty">
+            <div class="icon-lg" id="empty-icon"></div>
+            <b>고객을 선택하세요</b>
+            <p>왼쪽 목록에서 고객을 선택하면 대화가 시작됩니다.</p>
+          </div>
+        </div>
+        <form class="chat-input">
+          <input class="input" placeholder="메시지를 입력하세요" disabled>
+          <button class="btn btn-mint" disabled>전송</button>
+        </form>
+      </section>
+    </div>
+  </main>
+  <script src="/js/common.js"></script>
+  <script src="/js/agent.js"></script>
+</body>
+</html>

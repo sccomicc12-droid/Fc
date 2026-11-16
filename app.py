@@ -7,12 +7,15 @@ import os
 import re
 import sqlite3
 
-from flask import Flask, jsonify, request, send_from_directory, session
+from flask import Flask, jsonify, redirect, request, send_from_directory, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from database import get_connection, init_db
+from database import BASE_DIR, get_connection, init_db
 
+# static/ : CSS, JS 같은 누구나 받아도 되는 파일
+# pages/  : HTML 페이지. 서버가 로그인 여부를 확인한 뒤에만 보내줍니다.
 app = Flask(__name__, static_folder="static", static_url_path="")
+PAGES_DIR = BASE_DIR / "pages"
 # 세션(로그인 상태)을 암호화하는 비밀 키. 실제 서비스에서는 환경변수로 관리해야 합니다.
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 
@@ -22,9 +25,56 @@ USERNAME_RULE = re.compile(r"^[a-zA-Z0-9_]{4,20}$")
 # ---------------------------------------------------------------------------
 # 페이지
 # ---------------------------------------------------------------------------
-@app.route("/")
+def page(name):
+    return send_from_directory(PAGES_DIR, name)
+
+
+@app.get("/")
 def index():
-    return send_from_directory(app.static_folder, "index.html")
+    return page("index.html")
+
+
+@app.get("/login")
+def login_page():
+    return page("login.html")
+
+
+@app.get("/signup")
+def signup_page():
+    return page("signup.html")
+
+
+@app.get("/customer")
+def customer_page():
+    # 백엔드에서 접근 권한 검사: 로그인 안 했으면 로그인 페이지로 보냄
+    user = current_user()
+    if user is None:
+        return redirect("/login?next=/customer")
+    if user["role"] == "agent":
+        return redirect("/agent")
+    return page("customer.html")
+
+
+@app.get("/agent")
+def agent_page():
+    user = current_user()
+    if user is None:
+        return redirect("/login?next=/agent")
+    if user["role"] != "agent":
+        return redirect("/customer")  # 고객은 상담원 화면에 들어올 수 없음
+    return page("agent.html")
+
+
+# ---------------------------------------------------------------------------
+# 카테고리 API
+# ---------------------------------------------------------------------------
+@app.get("/api/categories")
+def categories():
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT slug, name, description FROM categories ORDER BY sort_order"
+        ).fetchall()
+    return jsonify(categories=[dict(r) for r in rows])
 
 
 # ---------------------------------------------------------------------------
@@ -114,4 +164,5 @@ def public_user(user):
 
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True, port=5000)
+    # HOST=0.0.0.0 으로 실행하면 같은 와이파이의 다른 기기(아이패드 등)에서도 접속 가능
+    app.run(debug=True, host=os.environ.get("HOST", "127.0.0.1"), port=5000)

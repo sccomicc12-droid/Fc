@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <title>내 상담 · MintDesk</title>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main class="container">
+    <div class="page-head">
+      <h1 id="greeting">1:1 상담</h1>
+      <p>문의 유형을 선택하고 상담을 시작하세요.</p>
+    </div>
+
+    <div class="workspace">
+      <aside class="card">
+        <h2 class="section-title">문의 유형</h2>
+        <div class="side-list" id="category-list"></div>
+      </aside>
+
+      <section class="card card-mint chat">
+        <div class="chat-head">
+          <div>
+            <h2 id="chat-title">카테고리를 선택하세요</h2>
+            <small class="muted"><span class="status-dot" id="chat-dot"></span><span id="chat-status">대기 전</span></small>
+          </div>
+          <button class="btn btn-mint" id="start-btn" disabled>상담 시작</button>
+        </div>
+        <div class="chat-body" id="chat-body">
+          <div class="empty">
+            <div class="icon-lg" id="empty-icon"></div>
+            <b>아직 진행 중인 상담이 없어요</b>
+            <p>왼쪽에서 문의 유형을 고른 뒤 상담을 시작하세요.</p>
+          </div>
+        </div>
+        <form class="chat-input" id="chat-form">
+          <input class="input" id="chat-text" placeholder="메시지를 입력하세요" disabled>
+          <button class="btn btn-mint" disabled>전송</button>
+        </form>
+      </section>
+    </div>
+  </main>
+  <script src="/js/common.js"></script>
+  <script src="/js/customer.js"></script>
+</body>
+</html>

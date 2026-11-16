@@ -19,10 +19,28 @@ def get_connection():
     return conn
 
 
+# 기본 문의 카테고리 (slug, 이름, 설명)
+DEFAULT_CATEGORIES = [
+    ("order", "주문 · 배송", "주문 확인, 배송 조회, 배송지 변경"),
+    ("payment", "결제 · 환불", "결제 오류, 환불 요청, 영수증 발급"),
+    ("account", "회원 · 계정", "로그인 문제, 비밀번호 변경, 회원 탈퇴"),
+    ("product", "상품 문의", "재고, 사이즈, 상품 상세 정보"),
+    ("tech", "기술 지원", "사이트 오류, 앱 사용법, 버그 신고"),
+    ("etc", "기타 문의", "제휴, 제안, 그 밖의 모든 문의"),
+]
+
+
 def init_db():
-    """테이블을 만들고, 테스트용 상담원 계정이 없으면 하나 만들어 둡니다."""
+    """테이블을 만들고, 기본 카테고리와 테스트용 상담원 계정을 넣어 둡니다."""
     with get_connection() as conn:
         conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+
+        # INSERT OR IGNORE: 이미 있으면(slug 중복) 무시하고 넘어감
+        conn.executemany(
+            "INSERT OR IGNORE INTO categories (slug, name, description, sort_order) "
+            "VALUES (?, ?, ?, ?)",
+            [(s, n, d, i) for i, (s, n, d) in enumerate(DEFAULT_CATEGORIES)],
+        )
 
         exists = conn.execute(
             "SELECT 1 FROM users WHERE username = ?", ("agent",)
