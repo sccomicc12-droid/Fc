@@ -28,25 +28,31 @@ import zlib
 class _StringEncryptor(ast.NodeTransformer):
     """Replace str constants with a call to the injected decoder _d("...")."""
 
-    def __init__(self, key: bytes, decoder_name: str):
+    def __init__(self, key: bytes, str_name: str, bytes_name: str):
         self.key = key
-        self.decoder_name = decoder_name
+        self.str_name = str_name
+        self.bytes_name = bytes_name
 
     def visit_JoinedStr(self, node: ast.JoinedStr):
         # Do NOT descend into f-strings: their literal parts are not standalone
         # expressions and cannot be replaced by a _d(...) call. Leave intact.
         return node
 
-    def visit_Constant(self, node: ast.Constant):
-        if not isinstance(node.value, str):
-            return node
-        raw = node.value.encode("utf-8")
+    def _xor_b64(self, raw: bytes) -> str:
         enc = bytes(b ^ self.key[i % len(self.key)] for i, b in enumerate(raw))
-        payload = base64.b64encode(enc).decode("ascii")
-        # _d("<payload>")
+        return base64.b64encode(enc).decode("ascii")
+
+    def visit_Constant(self, node: ast.Constant):
+        # Handle both str and bytes literals (keys/salts are usually bytes).
+        if isinstance(node.value, str):
+            payload, fn = self._xor_b64(node.value.encode("utf-8")), self.str_name
+        elif isinstance(node.value, bytes):
+            payload, fn = self._xor_b64(node.value), self.bytes_name
+        else:
+            return node
         return ast.copy_location(
             ast.Call(
-                func=ast.Name(id=self.decoder_name, ctx=ast.Load()),
+                func=ast.Name(id=fn, ctx=ast.Load()),
                 args=[ast.Constant(value=payload)],
                 keywords=[],
             ),
@@ -54,26 +60,29 @@ class _StringEncryptor(ast.NodeTransformer):
         )
 
 
-def _decoder_prelude(key: bytes, decoder_name: str) -> str:
+def _decoder_prelude(key: bytes, str_name: str, bytes_name: str) -> str:
     key_lit = repr(key)
-    # Self-contained decoder; no external imports beyond base64 (stdlib).
+    # Self-contained decoders; str -> text, bytes -> raw bytes.
     return (
         "import base64 as __b64\n"
         f"__K = {key_lit}\n"
-        f"def {decoder_name}(s):\n"
+        f"def {bytes_name}(s):\n"
         "    d = __b64.b64decode(s)\n"
-        "    return bytes(c ^ __K[i % len(__K)] for i, c in enumerate(d)).decode('utf-8')\n"
+        "    return bytes(c ^ __K[i % len(__K)] for i, c in enumerate(d))\n"
+        f"def {str_name}(s):\n"
+        f"    return {bytes_name}(s).decode('utf-8')\n"
     )
 
 
 def encrypt_strings(source: str) -> str:
     tree = ast.parse(source)
     key = secrets.token_bytes(16)
-    decoder_name = "__" + secrets.token_hex(4)
-    tree = _StringEncryptor(key, decoder_name).visit(tree)
+    str_name = "__" + secrets.token_hex(4)
+    bytes_name = "__" + secrets.token_hex(4)
+    tree = _StringEncryptor(key, str_name, bytes_name).visit(tree)
     ast.fix_missing_locations(tree)
     body = ast.unparse(tree)
-    return _decoder_prelude(key, decoder_name) + "\n" + body
+    return _decoder_prelude(key, str_name, bytes_name) + "\n" + body
 
 
 # --------------------------------------------------------------------------- #

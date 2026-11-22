@@ -1,3 +1,5 @@
 .venv/
 __pycache__/
 *.db
+pyobf/demo/dist/
+*.obf.py
